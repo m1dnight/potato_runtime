@@ -1,18 +1,20 @@
-defmodule Potato do
+defmodule Potato.Application do
   @moduledoc """
-  Documentation for Potato.
+  Starts up all the modules required to operate Potato.
   """
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
 
-  ## Examples
+    # Define workers and child supervisors to be supervised
+    children = [
+      # Starts a worker by calling: Network.Worker.start_link(arg1, arg2, arg3)
+      worker(Potato.Network.Broadcast, [])
+    ]
 
-      iex> Potato.hello
-      :world
-
-  """
-  def hello do
-    :world
+    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: Potato.Supervisor]
+    Supervisor.start_link(children, opts)
   end
 end

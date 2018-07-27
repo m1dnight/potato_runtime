@@ -2,6 +2,15 @@
 
 **TODO: Add description**
 
+## Running a Potato Node
+
+To start up a Potato node you need to start the project with a name and a cookie.
+
+```
+iex --sname bob --cookie "secret" -S mix
+iex --sname alice --cookie "secret" -S mix
+```
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
@@ -14,8 +23,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/potato](https://hexdocs.pm/potato).
-
