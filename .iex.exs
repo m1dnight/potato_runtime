@@ -1,4 +1,4 @@
-alias Potato.Network.{Meta, Discover}
+alias Potato.Network.{Meta, Discover, Evaluator}
 
 nd = %{
   hardware: :android,

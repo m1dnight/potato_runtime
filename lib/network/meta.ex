@@ -52,7 +52,8 @@ defmodule Potato.Network.Meta do
     new_state = handle_join(remote, state)
 
     # Send our node descriptor to the newly joined node.
-    cast({__MODULE__, remote}, {:set_remote_nd, Node.self(), state.self})
+    send_local_nd_to_remote(state, remote)
+
     {:reply, :ok, new_state}
   end
 
@@ -77,9 +78,9 @@ defmodule Potato.Network.Meta do
   end
 
   def handle_cast({:set_remote_nd, remote, map}, state) do
-    Logger.debug("Remote ND for #{inspect(remote)}")
     # If the new ND is not nil, we store it.
     if nil != map do
+      Logger.debug("Remote ND for #{inspect(remote)}")
       new_state = %{state | others: Map.put(state.others, remote, map)}
       {:noreply, new_state}
     else
@@ -90,6 +91,10 @@ defmodule Potato.Network.Meta do
   #
   # ------------------------ Helpers
   #
+
+  defp send_local_nd_to_remote(state, remote) do
+    cast({__MODULE__, remote}, {:set_remote_nd, Node.self(), state.self})
+  end
 
   defp broadcast_local_node_descriptor(state) do
     abcast(Node.list(), __MODULE__, {:set_remote_nd, Node.self(), state.self})
