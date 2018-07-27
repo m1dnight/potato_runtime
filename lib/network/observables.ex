@@ -47,7 +47,9 @@ defmodule Potato.Network.Observables do
 
   def handle_call(:network, _from, state) do
     # Prepend with current nodes.
-    current = Meta.current_network()
+    current = 
+    Meta.current_network()
+    |> Enum.map(fn n -> {:join, n} end)
 
     observable = state.network |> Observables.Obs.starts_with(current) 
 
