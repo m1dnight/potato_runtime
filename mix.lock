@@ -1,0 +1,3 @@
+%{
+  "observables": {:git, "https://github.com/m1dnight/observables", "8ddf653f86f9b0ab682b6da0e830797084177fc0", [branch: "dev"]},
+}

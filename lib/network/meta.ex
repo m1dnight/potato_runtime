@@ -50,10 +50,6 @@ defmodule Potato.Network.Meta do
 
   def handle_call({:join, remote}, _from, state) do
     new_state = handle_join(remote, state)
-
-    # Send our node descriptor to the newly joined node.
-    send_local_nd_to_remote(state, remote)
-
     {:reply, :ok, new_state}
   end
 
@@ -65,10 +61,8 @@ defmodule Potato.Network.Meta do
   def handle_call({:set_local_nd, map}, _from, state) do
     # Update our own ND in the state.
     new_state = %{state | self: map}
-
     # Notify the network that we have updated our ND.
     broadcast_local_node_descriptor(new_state)
-
     {:reply, :ok, new_state}
   end
 
@@ -101,11 +95,14 @@ defmodule Potato.Network.Meta do
   end
 
   defp handle_join(remote, state) do
+    # Send our node descriptor to the newly joined node.
+    send_local_nd_to_remote(state, remote)
     state
   end
 
   defp handle_part(remote, state) do
-    state
+    new_state = %{state | others: Map.delete(state.others, remote)}
+    new_state
   end
 
   defp dump_state(state) do

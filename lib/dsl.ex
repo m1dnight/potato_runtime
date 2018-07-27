@@ -4,8 +4,6 @@ defmodule Potato.DSL do
   The DSL module implements the language constructs needed to effectively write
   Potato programs.
   """
-  import Enum
-  alias Potato.Network.Designator
 
   defmacro __using__(_options) do
     quote do
