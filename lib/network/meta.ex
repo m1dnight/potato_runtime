@@ -17,6 +17,7 @@ defmodule Potato.Network.Meta do
   end
 
   def init([]) do
+    Registry.register(Potato.PubSub, :discover, [])
     {:ok, %Meta{}}
   end
 
@@ -25,20 +26,14 @@ defmodule Potato.Network.Meta do
   #
 
   @doc """
-  Notify the lobby of a node that joined the network.
-  """
-  def join(remote), do: call(__MODULE__, {:join, remote})
-
-  @doc """
-  Notify the lobby of a node that parted the network.
-  """
-  def part(remote), do: call(__MODULE__, {:part, remote})
-
-  @doc """
   Sets our local node descriptor. Should be setup by the application using the runtime.
   """
   def set_local_nd(map), do: call(__MODULE__, {:set_local_nd, map})
 
+  @doc """
+  Returns a list of the currently connected network descriptors.
+  """
+  def current_network(), do: call(__MODULE__, :current_network)
   @doc """
   Prints out some data of the local network. Useful for debugging.
   """
@@ -48,12 +43,12 @@ defmodule Potato.Network.Meta do
   # ------------------------ Callbacks
   #
 
-  def handle_call({:join, remote}, _from, state) do
+  def handle_call({:found, remote}, _from, state) do
     new_state = handle_join(remote, state)
     {:reply, :ok, new_state}
   end
 
-  def handle_call({:part, remote}, _from, state) do
+  def handle_call({:lost, remote}, _from, state) do
     new_state = handle_part(remote, state)
     {:reply, :ok, new_state}
   end
@@ -66,6 +61,10 @@ defmodule Potato.Network.Meta do
     {:reply, :ok, new_state}
   end
 
+  def handle_call(:current_network, _from, state) do
+    {:reply, Map.values(state.others), state}
+  end
+
   def handle_call(:dump, _from, state) do
     dump_state(state)
     {:reply, :ok, state}
@@ -76,6 +75,7 @@ defmodule Potato.Network.Meta do
     if nil != map do
       Logger.debug("Remote ND for #{inspect(remote)}")
       new_state = %{state | others: Map.put(state.others, remote, map)}
+      Potato.PubSub.call_all(:node_descriptors, {:added, remote, map})
       {:noreply, new_state}
     else
       {:noreply, state}
@@ -101,7 +101,9 @@ defmodule Potato.Network.Meta do
   end
 
   defp handle_part(remote, state) do
+    old_nd = Map.get(state.others, remote)
     new_state = %{state | others: Map.delete(state.others, remote)}
+    Potato.PubSub.call_all(:node_descriptors, {:removed, remote, old_nd})
     new_state
   end
 

@@ -10,6 +10,10 @@ defmodule Potato.Application do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(Registry, [
+        [keys: :duplicate, name: Potato.PubSub, partitions: System.schedulers_online()]
+      ]),
+      worker(Potato.Network.Observables, []),
       worker(Potato.Network.Evaluator, []),
       worker(Potato.Network.Meta, []),
       worker(Potato.Network.Broadcast, [])

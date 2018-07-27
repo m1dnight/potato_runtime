@@ -86,12 +86,12 @@ defmodule Potato.Network.Broadcast do
 
   defp handle_disconnect(remote) do
     Logger.debug("LOST: #{inspect(remote)}")
-    Meta.part(remote)
+    Potato.PubSub.call_all(:discover, {:lost, remote})
   end
 
   defp handle_connect(remote) do
     Logger.debug("DISCOVER: #{inspect(remote)}")
-    Meta.join(remote)
+    Potato.PubSub.call_all(:discover, {:found, remote})
   end
 
   defp handle_discovery(msg) do
