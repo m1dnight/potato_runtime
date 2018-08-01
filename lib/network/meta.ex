@@ -80,12 +80,13 @@ defmodule Potato.Network.Meta do
 
   def handle_cast({:set_remote_nd, remote, map}, state) do
     # If the new ND is not nil, we store it.
-    if nil != map do
+    if valid_nd?(map) do
       Logger.debug("Remote ND for #{inspect(remote)}")
       new_state = %{state | others: Map.put(state.others, remote, map)}
       Potato.PubSub.call_all(:node_descriptors, {:added, remote, map})
       {:noreply, new_state}
     else
+      Logger.warn "Remote ND was not valid: #{inspect map}"
       {:noreply, state}
     end
   end
@@ -104,7 +105,11 @@ defmodule Potato.Network.Meta do
 
   defp handle_join(remote, state) do
     # Send our node descriptor to the newly joined node.
-    send_local_nd_to_remote(state, remote)
+    if valid_nd?(state.self) do
+      send_local_nd_to_remote(state, remote)
+    else
+      Logger.warn "We don't have a valid ND ourselves, so we are not broadcasting it yet!"
+    end
     state
   end
 
@@ -113,6 +118,14 @@ defmodule Potato.Network.Meta do
     new_state = %{state | others: Map.delete(state.others, remote)}
     Potato.PubSub.call_all(:node_descriptors, {:removed, remote, old_nd})
     new_state
+  end
+
+  defp valid_nd?(nd) do
+    Map.has_key?(nd, :hardware)
+    and Map.has_key?(nd, :type)
+    and Map.has_key?(nd, :name)
+    and Map.has_key?(nd, :uuid)
+
   end
 
   defp dump_state(state) do
