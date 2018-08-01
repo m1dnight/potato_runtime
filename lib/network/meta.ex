@@ -24,7 +24,9 @@ defmodule Potato.Network.Meta do
     # We safely assume it has been started before us.
     deployment_subject = Potato.Network.Observables.deployment()
 
-    {:ok, %Meta{self: %{:deploy => deployment_subject}}}
+    myself_subject = Potato.Network.Observables.myself()
+
+    {:ok, %Meta{self: %{:deploy => deployment_subject, :myself => myself_subject}}}
   end
 
   #
@@ -45,6 +47,10 @@ defmodule Potato.Network.Meta do
   Prints out some data of the local network. Useful for debugging.
   """
   def dump(), do: call(__MODULE__, :dump)
+
+  @doc """
+  
+  """
 
   #
   # ------------------------ Callbacks
@@ -86,7 +92,7 @@ defmodule Potato.Network.Meta do
       Potato.PubSub.call_all(:node_descriptors, {:added, remote, map})
       {:noreply, new_state}
     else
-      Logger.warn("Remote ND was not valid: #{inspect(map)}")
+      Logger.warn "Remote ND was not valid: #{inspect map}"
       {:noreply, state}
     end
   end
@@ -108,9 +114,8 @@ defmodule Potato.Network.Meta do
     if valid_nd?(state.self) do
       send_local_nd_to_remote(state, remote)
     else
-      Logger.warn("We don't have a valid ND ourselves, so we are not broadcasting it yet!")
+      Logger.warn "We don't have a valid ND ourselves, so we are not broadcasting it yet!"
     end
-
     state
   end
 
@@ -122,8 +127,11 @@ defmodule Potato.Network.Meta do
   end
 
   defp valid_nd?(nd) do
-    Map.has_key?(nd, :hardware) and Map.has_key?(nd, :type) and Map.has_key?(nd, :name) and
-      Map.has_key?(nd, :uuid)
+    Map.has_key?(nd, :hardware)
+    and Map.has_key?(nd, :type)
+    and Map.has_key?(nd, :name)
+    and Map.has_key?(nd, :uuid)
+
   end
 
   defp dump_state(state) do
