@@ -10,7 +10,7 @@ defmodule Potato.Network.Meta do
   import GenServer
   alias Potato.Network.Meta
 
-  defstruct others: %{}, self: nil
+  defstruct others: %{}, self: %{}
 
   def start_link() do
     start_link(__MODULE__, [], [{:name, __MODULE__}])
@@ -18,7 +18,13 @@ defmodule Potato.Network.Meta do
 
   def init([]) do
     Registry.register(Potato.PubSub, :discover, [])
-    {:ok, %Meta{}}
+
+    # We need to get the deployment subject from the Observables first. 
+    # We can not go online without it.
+    # We safely assume it has been started before us.
+    deployment_subject = Potato.Network.Observables.deployment()
+
+    {:ok, %Meta{self: %{:deploy => deployment_subject}}}
   end
 
   #
@@ -34,6 +40,7 @@ defmodule Potato.Network.Meta do
   Returns a list of the currently connected network descriptors.
   """
   def current_network(), do: call(__MODULE__, :current_network)
+
   @doc """
   Prints out some data of the local network. Useful for debugging.
   """
@@ -55,7 +62,8 @@ defmodule Potato.Network.Meta do
 
   def handle_call({:set_local_nd, map}, _from, state) do
     # Update our own ND in the state.
-    new_state = %{state | self: map}
+    new_self = Map.merge(map, state.self)
+    new_state = %{state | self: new_self}
     # Notify the network that we have updated our ND.
     broadcast_local_node_descriptor(new_state)
     {:reply, :ok, new_state}

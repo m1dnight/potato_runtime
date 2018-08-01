@@ -15,11 +15,16 @@ defmodule Potato.Network.Observables do
   def init(opts) do
     Registry.register(Potato.PubSub, :node_descriptors, [])
 
-    # Setup the initial observables.
+    # The network observable is for local use. It emits events about network joins and parts.
     network = Observables.Subject.create()
+
+    # The bluetooth observable is the same as network, but then on the bluetooth scanner.
     bluetooth = Observables.Subject.create()
 
-    state = %{:network => network, :bluetooth => bluetooth}
+    # The subject for deployment is listened to locally, and published widely. 
+    deployment = Observables.Subject.create()
+
+    state = %{:network => network, :bluetooth => bluetooth, :deployment => deployment}
     {:ok, state}
   end
 
@@ -30,6 +35,8 @@ defmodule Potato.Network.Observables do
   def network(), do: call(__MODULE__, :network)
 
   def bluetooth(), do: call(__MODULE__, :bluetooth)
+
+  def deployment(), do: call(__MODULE__, :deployment)
 
   #
   # ------------------------ Callbacks 
@@ -47,16 +54,20 @@ defmodule Potato.Network.Observables do
 
   def handle_call(:network, _from, state) do
     # Prepend with current nodes.
-    current = 
-    Meta.current_network()
-    |> Enum.map(fn n -> {:join, n} end)
+    current =
+      Meta.current_network()
+      |> Enum.map(fn n -> {:join, n} end)
 
-    observable = state.network |> Observables.Obs.starts_with(current) 
+    observable = state.network |> Observables.Obs.starts_with(current)
 
     {:reply, observable, state}
   end
 
   def handle_call(:bluetooth, _from, state) do
     {:reply, state.bluetooth, state}
+  end
+
+  def handle_call(:deployment, _from, state) do
+    {:reply, state.deployment, state}
   end
 end

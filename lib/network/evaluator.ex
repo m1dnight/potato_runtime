@@ -12,7 +12,12 @@ defmodule Potato.Network.Evaluator do
   end
 
   def init([]) do
-    {:ok, []}
+    deployment_subject = Potato.Network.Observables.deployment()
+
+    deployment_subject
+    |> Observables.Obs.map(fn e -> deploy_program(e) end)
+
+    {:ok, %{}}
   end
 
   #
